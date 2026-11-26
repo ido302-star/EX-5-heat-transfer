@@ -36,7 +36,7 @@ class AboutWindow(QWidget):
         # Title
         self.title_label = QLabel("Heat Transfer")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setStyleSheet("font-size: 22px; font-weight: bold; color: #b22222;")
+        self.title_label.setObjectName("about_title")  # styled in style.qss
 
         # Image (scaled down to fit the window)
         self.image_label = QLabel()
@@ -50,13 +50,13 @@ class AboutWindow(QWidget):
         # How-to-use text
         self.help_label = QLabel(HELP_TEXT)
         self.help_label.setWordWrap(True)
-        self.help_label.setStyleSheet("font-size: 13px;")
+        self.help_label.setObjectName("about_text")
 
         # Clickable link that opens in the web browser
         self.link_label = QLabel(f'The project is on GitHub at:<br><a href="{GITHUB_URL}">{GITHUB_URL}</a>')
         self.link_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.link_label.setOpenExternalLinks(True)
-        self.link_label.setStyleSheet("font-size: 13px;")
+        self.link_label.setObjectName("about_link")
 
         # Close button
         self.close_button = QPushButton("Close")

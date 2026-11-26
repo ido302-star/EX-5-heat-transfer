@@ -1,0 +1,114 @@
+/* ===== style.qss - the design for the whole Heat Transfer app ===== */
+
+/* ---------- General: font, text color and background ---------- */
+QWidget {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 10pt;
+    color: #2c3e50;
+    background-color: #f4f6f8;
+}
+
+QLabel {
+    background: transparent;
+}
+
+/* ---------- Buttons ---------- */
+QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #b0bac4;
+    border-radius: 6px;
+    padding: 6px 18px;
+    min-width: 70px;
+}
+QPushButton:hover {
+    background-color: #e8eef4;
+    border-color: #5d7a96;
+}
+QPushButton:pressed {
+    background-color: #d3dde7;
+}
+
+/* Start button: green while stopped, red while the simulation runs (checked) */
+QPushButton#start_button {
+    background-color: #27ae60;
+    border-color: #1e8449;
+    color: white;
+    font-weight: bold;
+}
+QPushButton#start_button:hover {
+    background-color: #2ecc71;
+}
+QPushButton#start_button:checked {
+    background-color: #c0392b;
+    border-color: #922b21;
+}
+QPushButton#start_button:checked:hover {
+    background-color: #e74c3c;
+}
+
+/* ---------- Spin boxes and combo box ---------- */
+QDoubleSpinBox, QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #b0bac4;
+    border-radius: 4px;
+    padding: 3px 6px;
+    min-width: 110px;
+}
+QDoubleSpinBox:focus, QComboBox:focus {
+    border-color: #2e86c1;
+}
+
+/* Read-only temperature fields: gray, so it is clear they can't be typed in */
+QDoubleSpinBox[readOnly="true"] {
+    background-color: #e5e8eb;
+    color: #555555;
+    font-weight: bold;
+}
+/* Hide the up/down buttons on these fields (width 0, so they take no space) */
+QDoubleSpinBox[readOnly="true"]::up-button,
+QDoubleSpinBox[readOnly="true"]::down-button {
+    width: 0px;
+    border: none;
+}
+
+/* ---------- Vertical temperature sliders ---------- */
+QSlider:vertical {
+    min-width: 24px;  /* room for the round handle */
+}
+QSlider::groove:vertical {
+    width: 8px;
+    border-radius: 4px;
+    /* blue (cold) at the bottom, red (hot) at the top */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #e74c3c, stop:1 #3498db);
+}
+QSlider::handle:vertical {
+    height: 18px;
+    margin: 0 -6px;
+    border-radius: 9px;
+    background: #ffffff;
+    border: 2px solid #2c3e50;
+}
+QSlider::handle:vertical:hover {
+    background: #e8eef4;
+}
+
+/* ---------- The two bodies and the bar between them ---------- */
+QFrame#body1_rect {
+    background-color: red;
+}
+QFrame#body2_rect {
+    background-color: black;
+}
+QFrame#bar {
+    background-color: gray;
+}
+
+/* ---------- About window ---------- */
+QLabel#about_title {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #b22222;
+}
+QLabel#about_text, QLabel#about_link {
+    font-size: 10pt;
+}

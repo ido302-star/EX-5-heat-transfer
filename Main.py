@@ -1,15 +1,19 @@
+import os
 import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QSlider, QDoubleSpinBox, QPushButton,
-    QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, QAbstractSpinBox,
+    QFrame, QHBoxLayout, QVBoxLayout, QGridLayout,
 )
 
 from GraphWindow import GraphWindow
 from AboutWindow import AboutWindow
 
 MAX_TEMP = 1000  # highest temperature allowed in the UI (°C)
+
+# The style file is next to this file, so it is found from any working directory
+STYLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "style.qss")
 
 
 class HeatTransfer(QWidget):
@@ -25,7 +29,7 @@ class HeatTransfer(QWidget):
 
         # ---------- Top area: sliders, bodies and the connecting bar ----------
         self.slider1 = self.make_temp_slider(200)
-        self.body1_rect = self.make_body_rect("red")
+        self.body1_rect = self.make_body_rect("body1_rect")
 
         self.conductivity_label = QLabel("Conductivity")
         self.conductivity_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -36,8 +40,8 @@ class HeatTransfer(QWidget):
 
         # Gray bar that connects the two bodies
         self.bar = QFrame()
+        self.bar.setObjectName("bar")  # its color is set in style.qss
         self.bar.setFixedHeight(20)
-        self.bar.setStyleSheet("background-color: gray;")
 
         middle_top = QVBoxLayout()
         middle_top.addStretch()
@@ -46,7 +50,7 @@ class HeatTransfer(QWidget):
         middle_top.addWidget(self.bar)
         middle_top.addStretch()
 
-        self.body2_rect = self.make_body_rect("black")
+        self.body2_rect = self.make_body_rect("body2_rect")
         self.slider2 = self.make_temp_slider(0)
 
         top_layout = QHBoxLayout()
@@ -70,6 +74,7 @@ class HeatTransfer(QWidget):
 
         # Middle buttons
         self.start_button = QPushButton("Start")
+        self.start_button.setObjectName("start_button")  # has its own look in style.qss
         self.start_button.setCheckable(True)  # toggle: Start / Stop
         self.graphs_button = QPushButton("Graphs")
         self.graphs_button.clicked.connect(self.graph_window.show)
@@ -108,21 +113,22 @@ class HeatTransfer(QWidget):
         slider.setValue(value)
         return slider
 
-    def make_body_rect(self, color):
+    def make_body_rect(self, name):
+        # The color of each body is set in style.qss by its object name
         rect = QFrame()
+        rect.setObjectName(name)
         rect.setFixedSize(80, 150)
-        rect.setStyleSheet(f"background-color: {color};")
         return rect
 
     def make_temp_display(self, value):
-        # Read-only: the temperature will be changed only through the slider
+        # Read-only: the temperature will be changed only through the slider.
+        # The up/down buttons are hidden in style.qss (width 0).
         spin = QDoubleSpinBox()
         spin.setRange(0.0, MAX_TEMP)
         spin.setDecimals(1)
         spin.setValue(value)
         spin.setSuffix(" °C")
         spin.setReadOnly(True)
-        spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         return spin
 
     def make_mass_spin(self):
@@ -150,6 +156,11 @@ class HeatTransfer(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Load the design for all windows from one file
+    with open(STYLE_PATH, encoding="utf-8") as style_file:
+        app.setStyleSheet(style_file.read())
+
     window = HeatTransfer()
     window.show()
     sys.exit(app.exec())
