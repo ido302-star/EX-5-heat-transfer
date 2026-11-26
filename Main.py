@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (
     QFrame, QHBoxLayout, QVBoxLayout, QGridLayout, QAbstractSpinBox,
 )
 
+from GraphWindow import GraphWindow
+
 MAX_TEMP = 1000  # highest temperature allowed in the UI (°C)
 
 
@@ -13,6 +15,7 @@ class HeatTransfer(QWidget):
     def __init__(self):
         super().__init__()
         # other windows and variables here
+        self.graph_window = GraphWindow()
         self.setupUI()
 
     def setupUI(self):
@@ -67,6 +70,7 @@ class HeatTransfer(QWidget):
         self.start_button = QPushButton("Start")
         self.start_button.setCheckable(True)  # toggle: Start / Stop
         self.graphs_button = QPushButton("Graphs")
+        self.graphs_button.clicked.connect(self.graph_window.show)
         self.about_button = QPushButton("About")
         middle_bottom = QVBoxLayout()
         middle_bottom.addWidget(self.start_button)
