@@ -140,7 +140,16 @@ class HeatTransfer(QWidget):
     def update_body_color(self, rect, temperature):
         # 0 °C = black (0,0,0), MAX_TEMP = full red (255,0,0), linear in between
         red = int(temperature / MAX_TEMP * 255)
+        red = max(0, min(255, red))  # keep it a valid color value
         rect.setStyleSheet(f"background-color: rgb({red}, 0, 0);")
+
+    def show_body_temperature(self, slider, spin, rect, temperature):
+        # Show a temperature that came from the simulation (not from the user)
+        slider.blockSignals(True)       # so the slider won't overwrite the exact value
+        slider.setValue(round(temperature))
+        slider.blockSignals(False)
+        spin.setValue(temperature)      # exact (float) temperature
+        self.update_body_color(rect, temperature)
 
     # ---------- Simulation ----------
     def start_stop_button_method(self):
@@ -148,7 +157,7 @@ class HeatTransfer(QWidget):
             # Start: build the two bodies from the values on the screen
             self.body1 = Body(self.mass1_spin.value(), self.hcap1_spin.value(), self.temp1_spin.value())
             self.body2 = Body(self.mass2_spin.value(), self.hcap2_spin.value(), self.temp2_spin.value())
-            self.elapsed_time = 0.0
+            self.elapsed_time = 0.0  # new simulation starts at t = 0
             self.set_inputs_enabled(False)
             self.start_button.setText("Stop")
             self.timer.start()
@@ -159,9 +168,27 @@ class HeatTransfer(QWidget):
             self.start_button.setText("Start")
 
     def timer_method(self):
-        # Called every DT seconds while running (the physics comes in the next step)
+        # One simulation step, called every DT seconds while running
+        sigma = self.conductivity_spin.value()
+        t1 = self.body1.temperature  # old temperatures, used for both bodies
+        t2 = self.body2.temperature
+
+        # Heat current through the bar (J/s)
+        i1 = sigma * (t2 - t1)
+        i2 = sigma * (t1 - t2)
+
+        # Heat moved during this step (J)
+        dq1 = i1 * DT
+        dq2 = i2 * DT
+
+        # Add the heat to each body (add_heat returns the new temperature)
+        new_t1 = self.body1.add_heat(dq1)
+        new_t2 = self.body2.add_heat(dq2)
         self.elapsed_time += DT
-        print(f"t = {self.elapsed_time:.1f} s")
+
+        # Update the screen for both bodies
+        self.show_body_temperature(self.slider1, self.temp1_spin, self.body1_rect, new_t1)
+        self.show_body_temperature(self.slider2, self.temp2_spin, self.body2_rect, new_t2)
 
     def set_inputs_enabled(self, enabled):
         # Lock or unlock the inputs the user must not change while running
@@ -198,7 +225,7 @@ class HeatTransfer(QWidget):
         # The up/down buttons are hidden in style.qss (width 0).
         spin = QDoubleSpinBox()
         spin.setRange(0.0, MAX_TEMP)
-        spin.setDecimals(1)
+        spin.setDecimals(3)  # show the exact simulated temperature
         spin.setValue(value)
         spin.setSuffix(" °C")
         spin.setReadOnly(True)
