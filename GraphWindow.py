@@ -1,7 +1,11 @@
+import csv
+import os
+
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PySide6.QtWidgets import (
     QWidget, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox,
+    QFileDialog,
 )
 
 # Line color for each body
@@ -37,6 +41,7 @@ class GraphWindow(QWidget):
         self.clear_button = QPushButton("Clear")
         self.clear_button.clicked.connect(self.clear_graph)
         self.export_button = QPushButton("Export to CSV")
+        self.export_button.clicked.connect(self.export_csv)
 
         right_layout = QVBoxLayout()
         right_layout.addWidget(self.body_combo)
@@ -88,6 +93,38 @@ class GraphWindow(QWidget):
         self.ax.legend()
         self.figure.tight_layout()
         self.canvas.draw()
+
+    def export_csv(self):
+        # No simulation was run yet: nothing to save
+        if len(self.time_history) == 0:
+            QMessageBox.information(self, "No data", "Please run the simulation first.")
+            return
+
+        # Let the user choose where to save the file
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export to CSV", "heat_transfer_results.csv", "CSV files (*.csv)")
+        if path == "":
+            return  # the user pressed Cancel
+
+        # Write a header row and one row per time step.
+        # "utf-8-sig" lets Excel show the ° sign correctly.
+        try:
+            with open(path, "w", newline="", encoding="utf-8-sig") as file:
+                writer = csv.writer(file)
+                writer.writerow(["Time (s)", "Body 1 Temperature (°C)", "Body 2 Temperature (°C)"])
+                for i in range(len(self.time_history)):
+                    writer.writerow([round(self.time_history[i], 2),
+                                     self.body1_temp_history[i],
+                                     self.body2_temp_history[i]])
+        except OSError as error:
+            # For example: the file is open in Excel and locked
+            QMessageBox.warning(self, "Export failed",
+                                f"Could not save the file:\n{path}\n\n"
+                                f"If it is open in Excel, close it and try again.\n\n({error})")
+            return
+
+        # Open the saved file (in Excel on Windows)
+        os.startfile(path)
 
     def clear_graph(self):
         # Remove all lines, then put back the title, labels and grid
