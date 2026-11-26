@@ -4,8 +4,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout
 
-# TODO: replace this placeholder with the real GitHub page of the project
-GITHUB_URL = "https://github.com/your-username/heat-transfer"
+# The project's GitHub page
+GITHUB_URL = "https://github.com/ido302-star/EX-5-heat-transfer"
 
 # The image path is built from this file's folder, so it works from any working directory
 IMAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "my_image.png")
@@ -53,7 +53,7 @@ class AboutWindow(QWidget):
         self.help_label.setStyleSheet("font-size: 13px;")
 
         # Clickable link that opens in the web browser
-        self.link_label = QLabel(f'<a href="{GITHUB_URL}">Project page on GitHub</a>')
+        self.link_label = QLabel(f'The project is on GitHub at:<br><a href="{GITHUB_URL}">{GITHUB_URL}</a>')
         self.link_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.link_label.setOpenExternalLinks(True)
         self.link_label.setStyleSheet("font-size: 13px;")
