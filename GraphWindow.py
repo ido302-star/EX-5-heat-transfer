@@ -1,8 +1,11 @@
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PySide6.QtWidgets import (
-    QWidget, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout,
+    QWidget, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox,
 )
+
+# Line color for each body
+BODY_COLORS = {"Body 1": "red", "Body 2": "blue"}
 
 
 class GraphWindow(QWidget):
@@ -14,24 +17,25 @@ class GraphWindow(QWidget):
         self.time_history = time_history
         self.body1_temp_history = body1_temp_history
         self.body2_temp_history = body2_temp_history
+        self.lines = {}  # the lines already drawn, e.g. {"Body 1": line}
         self.setupUI()
 
     def setupUI(self):
         self.setWindowTitle("Graph Window")
 
-        # ---------- Left side: an empty matplotlib plot ----------
+        # ---------- Left side: the matplotlib plot ----------
         self.figure = Figure(figsize=(5, 4))
         self.canvas = FigureCanvas(self.figure)
         self.ax = self.figure.add_subplot()
-        self.ax.set_xlabel("Time (s)")
-        self.ax.set_ylabel("Temperature (°C)")
-        self.figure.tight_layout()
+        self.setup_axes()
 
         # ---------- Right side: body selection and buttons ----------
         self.body_combo = QComboBox()
         self.body_combo.addItems(["Body 1", "Body 2"])
         self.draw_button = QPushButton("Draw")
+        self.draw_button.clicked.connect(self.draw_graph)
         self.clear_button = QPushButton("Clear")
+        self.clear_button.clicked.connect(self.clear_graph)
         self.export_button = QPushButton("Export to CSV")
 
         right_layout = QVBoxLayout()
@@ -46,3 +50,48 @@ class GraphWindow(QWidget):
         main_layout.addWidget(self.canvas)
         main_layout.addLayout(right_layout)
         self.setLayout(main_layout)
+
+    def setup_axes(self):
+        # Title, axis labels and grid (used at the start and after Clear)
+        self.ax.set_title("Temperature vs. Time")
+        self.ax.set_xlabel("Time (s)")
+        self.ax.set_ylabel("Temperature (°C)")
+        self.ax.grid(True, alpha=0.3)
+        self.figure.tight_layout()
+
+    def draw_graph(self):
+        # No simulation was run yet: nothing to draw
+        if len(self.time_history) == 0:
+            QMessageBox.information(self, "No data", "Please run the simulation first.")
+            return
+
+        body = self.body_combo.currentText()
+        if body == "Body 1":
+            temperatures = self.body1_temp_history
+        else:
+            temperatures = self.body2_temp_history
+
+        # Copy the lists, so the line keeps this data even if the simulation goes on
+        times = list(self.time_history)
+        temperatures = list(temperatures)
+
+        if body in self.lines:
+            # Already drawn: update it with the latest data (no duplicate line)
+            self.lines[body].set_data(times, temperatures)
+        else:
+            # New line on top of what is already drawn
+            line, = self.ax.plot(times, temperatures, color=BODY_COLORS[body], label=body)
+            self.lines[body] = line
+
+        self.ax.relim()            # fit the axes to the data
+        self.ax.autoscale_view()
+        self.ax.legend()
+        self.figure.tight_layout()
+        self.canvas.draw()
+
+    def clear_graph(self):
+        # Remove all lines, then put back the title, labels and grid
+        self.ax.clear()
+        self.lines.clear()
+        self.setup_axes()
+        self.canvas.draw()
