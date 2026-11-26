@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 
@@ -13,6 +14,7 @@ from Body import Body
 
 MAX_TEMP = 200  # highest temperature allowed in the UI (°C)
 DT = 0.1        # simulation time step (seconds)
+MAX_STEP_FRACTION = 0.5  # max part of the temperature gap that may close in one sub-step
 
 # The style file is next to this file, so it is found from any working directory
 STYLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "style.qss")
@@ -52,9 +54,11 @@ class HeatTransfer(QWidget):
         self.conductivity_label = QLabel("Conductivity")
         self.conductivity_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.conductivity_spin = QDoubleSpinBox()
-        self.conductivity_spin.setRange(0.01, 100.0)
+        self.conductivity_spin.setRange(0.01, 100.0)  # must be > 0
+        self.conductivity_spin.setSingleStep(0.1)
         self.conductivity_spin.setValue(1.00)
         self.conductivity_spin.setSuffix(" J/s°C")
+        self.conductivity_spin.setMaximumWidth(160)  # don't stretch across the whole bar
 
         # Gray bar that connects the two bodies
         self.bar = QFrame()
@@ -64,7 +68,7 @@ class HeatTransfer(QWidget):
         middle_top = QVBoxLayout()
         middle_top.addStretch()
         middle_top.addWidget(self.conductivity_label)
-        middle_top.addWidget(self.conductivity_spin)
+        middle_top.addWidget(self.conductivity_spin, alignment=Qt.AlignmentFlag.AlignHCenter)
         middle_top.addWidget(self.bar)
         middle_top.addStretch()
 
@@ -183,28 +187,41 @@ class HeatTransfer(QWidget):
             self.start_button.setText("Start")
 
     def timer_method(self):
-        # One simulation step, called every DT seconds while running
+        # One simulation step of DT seconds, called by the timer while running
         sigma = self.conductivity_spin.value()
-        t1 = self.body1.temperature  # old temperatures, used for both bodies
-        t2 = self.body2.temperature
 
-        # Heat current through the bar (J/s)
-        i1 = sigma * (t2 - t1)
-        i2 = sigma * (t1 - t2)
+        # If heat moves fast (high sigma, small m*c), one DT step would overshoot
+        # and the temperatures would oscillate. So split DT into smaller sub-steps,
+        # each closing at most MAX_STEP_FRACTION of the temperature gap.
+        heat_capacity1 = self.body1.mass * self.body1.specific_heat  # m*c (J/°C)
+        heat_capacity2 = self.body2.mass * self.body2.specific_heat
+        gap_fraction = sigma * DT * (1 / heat_capacity1 + 1 / heat_capacity2)
+        sub_steps = max(1, math.ceil(gap_fraction / MAX_STEP_FRACTION))
+        sub_dt = DT / sub_steps
 
-        # Heat moved during this step (J)
-        dq1 = i1 * DT
-        dq2 = i2 * DT
+        for _ in range(sub_steps):
+            # Old temperatures, used for both bodies
+            old_temperature1 = self.body1.temperature
+            old_temperature2 = self.body2.temperature
 
-        # Add the heat to each body (add_heat returns the new temperature)
-        new_t1 = self.body1.add_heat(dq1)
-        new_t2 = self.body2.add_heat(dq2)
+            # Heat current through the bar (J/s): I1 = σ(T2 − T1), I2 = σ(T1 − T2)
+            heat_current1 = sigma * (old_temperature2 - old_temperature1)
+            heat_current2 = sigma * (old_temperature1 - old_temperature2)
+
+            # Heat moved during this sub-step (J): ΔQ = I · Δt
+            heat_change1 = heat_current1 * sub_dt
+            heat_change2 = heat_current2 * sub_dt
+
+            # Add the heat to each body (add_heat returns the new temperature)
+            new_temperature1 = self.body1.add_heat(heat_change1)
+            new_temperature2 = self.body2.add_heat(heat_change2)
+
         self.elapsed_time += DT
         self.record_history()
 
         # Update the screen for both bodies
-        self.show_body_temperature(self.slider1, self.temp1_spin, self.body1_rect, new_t1)
-        self.show_body_temperature(self.slider2, self.temp2_spin, self.body2_rect, new_t2)
+        self.show_body_temperature(self.slider1, self.temp1_spin, self.body1_rect, new_temperature1)
+        self.show_body_temperature(self.slider2, self.temp2_spin, self.body2_rect, new_temperature2)
 
     def record_history(self):
         # Save the current time and both temperatures for the graphs
@@ -251,18 +268,21 @@ class HeatTransfer(QWidget):
         spin.setValue(value)
         spin.setSuffix(" °C")
         spin.setReadOnly(True)
+        spin.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # display only, no cursor/highlight
         return spin
 
     def make_mass_spin(self):
         spin = QDoubleSpinBox()
-        spin.setRange(0.01, 1000.0)  # mass must be > 0
+        spin.setRange(0.1, 1000.0)  # mass must be > 0
+        spin.setSingleStep(1.0)
         spin.setValue(10.00)
         spin.setSuffix(" kg")
         return spin
 
     def make_hcap_spin(self):
         spin = QDoubleSpinBox()
-        spin.setRange(0.01, 10000.0)  # heat capacity must be > 0
+        spin.setRange(0.1, 10000.0)  # heat capacity must be > 0
+        spin.setSingleStep(0.1)
         spin.setValue(0.40)
         spin.setSuffix(" J/kg°C")
         return spin

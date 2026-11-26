@@ -112,10 +112,10 @@ class GraphWindow(QWidget):
             with open(path, "w", newline="", encoding="utf-8-sig") as file:
                 writer = csv.writer(file)
                 writer.writerow(["Time (s)", "Body 1 Temperature (°C)", "Body 2 Temperature (°C)"])
-                for i in range(len(self.time_history)):
-                    writer.writerow([round(self.time_history[i], 2),
-                                     self.body1_temp_history[i],
-                                     self.body2_temp_history[i]])
+                for time, temperature1, temperature2 in zip(self.time_history,
+                                                            self.body1_temp_history,
+                                                            self.body2_temp_history):
+                    writer.writerow([round(time, 2), temperature1, temperature2])
         except OSError as error:
             # For example: the file is open in Excel and locked
             QMessageBox.warning(self, "Export failed",
