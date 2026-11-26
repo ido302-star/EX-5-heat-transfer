@@ -92,13 +92,8 @@ QSlider::handle:vertical:hover {
     background: #e8eef4;
 }
 
-/* ---------- The two bodies and the bar between them ---------- */
-QFrame#body1_rect {
-    background-color: red;
-}
-QFrame#body2_rect {
-    background-color: black;
-}
+/* ---------- The bar between the two bodies ---------- */
+/* (The colors of the bodies change with temperature, so they are set in Main.py) */
 QFrame#bar {
     background-color: gray;
 }

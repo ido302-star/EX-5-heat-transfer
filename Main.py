@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 from GraphWindow import GraphWindow
 from AboutWindow import AboutWindow
 
-MAX_TEMP = 1000  # highest temperature allowed in the UI (°C)
+MAX_TEMP = 200  # highest temperature allowed in the UI (°C)
 
 # The style file is next to this file, so it is found from any working directory
 STYLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "style.qss")
@@ -19,9 +19,11 @@ STYLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "style.qss
 class HeatTransfer(QWidget):
     def __init__(self):
         super().__init__()
-        # other windows and variables here
+        # other window variables
         self.graph_window = GraphWindow()
         self.about_window = AboutWindow()
+        # other needed variables
+        # initialize the timer
         self.setupUI()
 
     def setupUI(self):
@@ -77,9 +79,9 @@ class HeatTransfer(QWidget):
         self.start_button.setObjectName("start_button")  # has its own look in style.qss
         self.start_button.setCheckable(True)  # toggle: Start / Stop
         self.graphs_button = QPushButton("Graphs")
-        self.graphs_button.clicked.connect(self.graph_window.show)
+        self.graphs_button.clicked.connect(self.open_graph_window)
         self.about_button = QPushButton("About")
-        self.about_button.clicked.connect(self.about_window.show)
+        self.about_button.clicked.connect(self.open_about_window)
         middle_bottom = QVBoxLayout()
         middle_bottom.addWidget(self.start_button)
         middle_bottom.addWidget(self.graphs_button)
@@ -106,6 +108,45 @@ class HeatTransfer(QWidget):
         main_layout.addLayout(bottom_layout)
         self.setLayout(main_layout)
 
+        # ---------- Signals ----------
+        # Moving a slider updates that body's temperature display and color
+        self.slider1.valueChanged.connect(self.left_temperature_changed)
+        self.slider2.valueChanged.connect(self.right_temperature_changed)
+
+        # Set the starting display and colors to match the sliders
+        self.left_temperature_changed()
+        self.right_temperature_changed()
+
+    # ---------- Temperature sliders ----------
+    def left_temperature_changed(self):
+        temperature = self.slider1.value()
+        self.temp1_spin.setValue(temperature)
+        self.update_body_color(self.body1_rect, temperature)
+
+    def right_temperature_changed(self):
+        temperature = self.slider2.value()
+        self.temp2_spin.setValue(temperature)
+        self.update_body_color(self.body2_rect, temperature)
+
+    def update_body_color(self, rect, temperature):
+        # 0 °C = black (0,0,0), MAX_TEMP = full red (255,0,0), linear in between
+        red = int(temperature / MAX_TEMP * 255)
+        rect.setStyleSheet(f"background-color: rgb({red}, 0, 0);")
+
+    # ---------- Simulation (next sub-steps) ----------
+    def start_stop_button_method(self):
+        pass
+
+    def timer_method(self):
+        pass
+
+    # ---------- Other windows ----------
+    def open_graph_window(self):
+        self.graph_window.show()
+
+    def open_about_window(self):
+        self.about_window.show()
+
     # ---------- Helper methods that build widgets ----------
     def make_temp_slider(self, value):
         slider = QSlider(Qt.Orientation.Vertical)
@@ -114,7 +155,7 @@ class HeatTransfer(QWidget):
         return slider
 
     def make_body_rect(self, name):
-        # The color of each body is set in style.qss by its object name
+        # The color of each body is set in code by update_body_color
         rect = QFrame()
         rect.setObjectName(name)
         rect.setFixedSize(80, 150)
