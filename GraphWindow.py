@@ -8,8 +8,12 @@ from PySide6.QtWidgets import (
 class GraphWindow(QWidget):
     """A separate window that shows temperature graphs."""
 
-    def __init__(self):
+    def __init__(self, time_history, body1_temp_history, body2_temp_history):
         super().__init__()
+        # References to the main window's history lists (the same list objects)
+        self.time_history = time_history
+        self.body1_temp_history = body1_temp_history
+        self.body2_temp_history = body2_temp_history
         self.setupUI()
 
     def setupUI(self):

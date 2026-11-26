@@ -21,8 +21,16 @@ STYLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "style.qss
 class HeatTransfer(QWidget):
     def __init__(self):
         super().__init__()
+        # Simulation history (for the graphs). These lists are only cleared,
+        # never replaced, so the graph window always sees the same lists.
+        self.time_history = []
+        self.body1_temp_history = []
+        self.body2_temp_history = []
+
         # other window variables
-        self.graph_window = GraphWindow()
+        self.graph_window = GraphWindow(self.time_history,
+                                        self.body1_temp_history,
+                                        self.body2_temp_history)
         self.about_window = AboutWindow()
         # other needed variables
         self.body1 = None        # Body objects, created when Start is pressed
@@ -158,6 +166,13 @@ class HeatTransfer(QWidget):
             self.body1 = Body(self.mass1_spin.value(), self.hcap1_spin.value(), self.temp1_spin.value())
             self.body2 = Body(self.mass2_spin.value(), self.hcap2_spin.value(), self.temp2_spin.value())
             self.elapsed_time = 0.0  # new simulation starts at t = 0
+
+            # New run: clear the old history and add the starting point
+            self.time_history.clear()
+            self.body1_temp_history.clear()
+            self.body2_temp_history.clear()
+            self.record_history()
+
             self.set_inputs_enabled(False)
             self.start_button.setText("Stop")
             self.timer.start()
@@ -185,10 +200,17 @@ class HeatTransfer(QWidget):
         new_t1 = self.body1.add_heat(dq1)
         new_t2 = self.body2.add_heat(dq2)
         self.elapsed_time += DT
+        self.record_history()
 
         # Update the screen for both bodies
         self.show_body_temperature(self.slider1, self.temp1_spin, self.body1_rect, new_t1)
         self.show_body_temperature(self.slider2, self.temp2_spin, self.body2_rect, new_t2)
+
+    def record_history(self):
+        # Save the current time and both temperatures for the graphs
+        self.time_history.append(self.elapsed_time)
+        self.body1_temp_history.append(self.body1.temperature)
+        self.body2_temp_history.append(self.body2.temperature)
 
     def set_inputs_enabled(self, enabled):
         # Lock or unlock the inputs the user must not change while running
