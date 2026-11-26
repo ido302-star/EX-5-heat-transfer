@@ -58,6 +58,13 @@ QDoubleSpinBox:focus, QComboBox:focus {
     border-color: #2e86c1;
 }
 
+/* Locked fields (disabled while the simulation runs) */
+QDoubleSpinBox:disabled {
+    background-color: #eceff1;
+    color: #9aa5b1;
+    border-color: #d5dbe0;
+}
+
 /* Read-only temperature fields: gray, so it is clear they can't be typed in */
 QDoubleSpinBox[readOnly="true"] {
     background-color: #e5e8eb;
@@ -90,6 +97,14 @@ QSlider::handle:vertical {
 }
 QSlider::handle:vertical:hover {
     background: #e8eef4;
+}
+/* Locked sliders: faded groove and gray handle */
+QSlider::groove:vertical:disabled {
+    background: #d5dbe0;
+}
+QSlider::handle:vertical:disabled {
+    background: #eceff1;
+    border-color: #9aa5b1;
 }
 
 /* ---------- The bar between the two bodies ---------- */

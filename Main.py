@@ -1,7 +1,7 @@
 import os
 import sys
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QSlider, QDoubleSpinBox, QPushButton,
     QFrame, QHBoxLayout, QVBoxLayout, QGridLayout,
@@ -9,8 +9,10 @@ from PySide6.QtWidgets import (
 
 from GraphWindow import GraphWindow
 from AboutWindow import AboutWindow
+from Body import Body
 
 MAX_TEMP = 200  # highest temperature allowed in the UI (°C)
+DT = 0.1        # simulation time step (seconds)
 
 # The style file is next to this file, so it is found from any working directory
 STYLE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "style.qss")
@@ -23,7 +25,13 @@ class HeatTransfer(QWidget):
         self.graph_window = GraphWindow()
         self.about_window = AboutWindow()
         # other needed variables
+        self.body1 = None        # Body objects, created when Start is pressed
+        self.body2 = None
+        self.elapsed_time = 0.0  # simulation time (seconds)
         # initialize the timer
+        self.timer = QTimer()
+        self.timer.setInterval(int(DT * 1000))  # DT in milliseconds
+        self.timer.timeout.connect(self.timer_method)
         self.setupUI()
 
     def setupUI(self):
@@ -78,6 +86,7 @@ class HeatTransfer(QWidget):
         self.start_button = QPushButton("Start")
         self.start_button.setObjectName("start_button")  # has its own look in style.qss
         self.start_button.setCheckable(True)  # toggle: Start / Stop
+        self.start_button.clicked.connect(self.start_stop_button_method)
         self.graphs_button = QPushButton("Graphs")
         self.graphs_button.clicked.connect(self.open_graph_window)
         self.about_button = QPushButton("About")
@@ -133,12 +142,35 @@ class HeatTransfer(QWidget):
         red = int(temperature / MAX_TEMP * 255)
         rect.setStyleSheet(f"background-color: rgb({red}, 0, 0);")
 
-    # ---------- Simulation (next sub-steps) ----------
+    # ---------- Simulation ----------
     def start_stop_button_method(self):
-        pass
+        if self.start_button.isChecked():
+            # Start: build the two bodies from the values on the screen
+            self.body1 = Body(self.mass1_spin.value(), self.hcap1_spin.value(), self.temp1_spin.value())
+            self.body2 = Body(self.mass2_spin.value(), self.hcap2_spin.value(), self.temp2_spin.value())
+            self.elapsed_time = 0.0
+            self.set_inputs_enabled(False)
+            self.start_button.setText("Stop")
+            self.timer.start()
+        else:
+            # Stop
+            self.timer.stop()
+            self.set_inputs_enabled(True)
+            self.start_button.setText("Start")
 
     def timer_method(self):
-        pass
+        # Called every DT seconds while running (the physics comes in the next step)
+        self.elapsed_time += DT
+        print(f"t = {self.elapsed_time:.1f} s")
+
+    def set_inputs_enabled(self, enabled):
+        # Lock or unlock the inputs the user must not change while running
+        inputs = [self.slider1, self.slider2,
+                  self.mass1_spin, self.hcap1_spin,
+                  self.mass2_spin, self.hcap2_spin,
+                  self.conductivity_spin]
+        for widget in inputs:
+            widget.setEnabled(enabled)
 
     # ---------- Other windows ----------
     def open_graph_window(self):
